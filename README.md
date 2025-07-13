@@ -410,7 +410,3 @@ After completing Tasks 1 and 2:
 2. Add tests for new models
 3. Update documentation
 4. Use meaningful commit messages
-
-## License
-
-This project is for educational purposes as part of the 10 Academy Data Engineering program.
