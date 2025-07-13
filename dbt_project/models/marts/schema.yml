@@ -1,0 +1,156 @@
+version: 2
+
+models:
+  - name: fact_message_analytics
+    description: "Core fact table containing all message analytics with business information"
+    columns:
+      - name: message_pk
+        description: "Primary key for messages"
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: "Name of the Telegram channel"
+        tests:
+          - not_null
+      - name: message_date
+        description: "Date and time when message was posted"
+        tests:
+          - not_null
+      - name: views
+        description: "Number of message views"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: engagement_score
+        description: "Calculated engagement score"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: business_completeness_score
+        description: "Score indicating completeness of business information (0-5)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 5
+
+  - name: business_summary
+    description: "Business intelligence summary by channel and category"
+    columns:
+      - name: channel_name
+        description: "Name of the Telegram channel"
+        tests:
+          - not_null
+      - name: total_messages
+        description: "Total number of messages"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+      - name: avg_engagement_score
+        description: "Average engagement score"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: pct_messages_with_business_info
+        description: "Percentage of messages containing business information"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      - name: engagement_rate_pct
+        description: "Engagement rate as percentage"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      - name: messages_per_day
+        description: "Average messages per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+  - name: daily_activity_trends
+    description: "Daily activity trends and patterns analysis"
+    columns:
+      - name: activity_date
+        description: "Date of activity"
+        tests:
+          - not_null
+      - name: channel_name
+        description: "Name of the Telegram channel"
+        tests:
+          - not_null
+      - name: daily_messages
+        description: "Number of messages posted on this date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: messages_7day_avg
+        description: "7-day moving average of daily messages"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: day_of_week
+        description: "Day of week (0=Sunday, 6=Saturday)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 6
+      - name: is_weekend
+        description: "Boolean indicating if date falls on weekend"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+# Custom tests
+tests:
+  - name: test_message_date_range
+    description: "Ensure message dates are within reasonable range"
+    sql: |
+      select count(*)
+      from {{ ref('fact_message_analytics') }}
+      where message_date < '2020-01-01' 
+         or message_date > current_timestamp + interval '1 day'
+    config:
+      severity: error
+
+  - name: test_price_reasonableness
+    description: "Ensure prices are within reasonable range for Ethiopian market"
+    sql: |
+      select count(*)
+      from {{ ref('fact_message_analytics') }}
+      where price is not null 
+        and (price < 0 or price > 1000000)
+    config:
+      severity: warn
+
+  - name: test_engagement_consistency
+    description: "Ensure engagement metrics are consistent"
+    sql: |
+      select count(*)
+      from {{ ref('fact_message_analytics') }}
+      where views > 0 and engagement_score = 0
+    config:
+      severity: warn
+
+  - name: test_business_category_distribution
+    description: "Ensure we have reasonable distribution of business categories"
+    sql: |
+      with category_counts as (
+        select 
+          business_category,
+          count(*) as cnt
+        from {{ ref('fact_message_analytics') }}
+        where business_category is not null
+        group by business_category
+      )
+      select count(*)
+      from category_counts
+      where cnt < 5  -- Each category should have at least 5 records
+    config:
+      severity: warn

@@ -1,0 +1,54 @@
+name: 'telegram_analytics'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'telegram_analytics'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Configuring models
+models:
+  telegram_analytics:
+    # Config indicated by + and applies to all files under models/staging/
+    staging:
+      +materialized: view
+      +schema: staging
+    # Config indicated by + and applies to all files under models/marts/
+    marts:
+      +materialized: table
+      +schema: marts
+      core:
+        +materialized: table
+      business:
+        +materialized: table
+
+# Configuring seeds
+seeds:
+  telegram_analytics:
+    +schema: seeds
+
+# Configuring tests
+tests:
+  +store_failures: true
+  +schema: test_failures
+
+# Variables
+vars:
+  # dbt-utils variables
+  'dbt_utils:dispatch_list': ['dbt_utils']
+  
+  # Project specific variables
+  start_date: '2024-01-01'
+  end_date: '2024-12-31'

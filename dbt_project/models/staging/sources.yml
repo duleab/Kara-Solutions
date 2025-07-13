@@ -1,0 +1,179 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data from Telegram scraping"
+    tables:
+      - name: telegram_channels
+        description: "Telegram channel information"
+        columns:
+          - name: id
+            description: "Primary key for channels"
+            tests:
+              - unique
+              - not_null
+          - name: channel_name
+            description: "Channel username"
+            tests:
+              - not_null
+          - name: channel_url
+            description: "Full URL to the channel"
+          - name: channel_id
+            description: "Telegram's internal channel ID"
+          - name: title
+            description: "Channel display title"
+          - name: description
+            description: "Channel description"
+          - name: participants_count
+            description: "Number of channel participants"
+          - name: created_at
+            description: "When the record was created"
+          - name: updated_at
+            description: "When the record was last updated"
+
+      - name: telegram_messages
+        description: "Messages scraped from Telegram channels"
+        columns:
+          - name: id
+            description: "Primary key for messages"
+            tests:
+              - unique
+              - not_null
+          - name: message_id
+            description: "Telegram's message ID"
+            tests:
+              - not_null
+          - name: channel_id
+            description: "Foreign key to telegram_channels"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'telegram_channels')
+                  field: id
+          - name: sender_id
+            description: "ID of the message sender"
+          - name: message_text
+            description: "Text content of the message"
+          - name: date
+            description: "When the message was posted"
+            tests:
+              - not_null
+          - name: views
+            description: "Number of views"
+          - name: forwards
+            description: "Number of forwards"
+          - name: replies
+            description: "Number of replies"
+          - name: is_reply
+            description: "Whether this message is a reply"
+          - name: reply_to_msg_id
+            description: "ID of the message this replies to"
+          - name: has_media
+            description: "Whether the message contains media"
+          - name: media_type
+            description: "Type of media attached"
+          - name: created_at
+            description: "When the record was created"
+
+      - name: media_files
+        description: "Media files downloaded from messages"
+        columns:
+          - name: id
+            description: "Primary key for media files"
+            tests:
+              - unique
+              - not_null
+          - name: message_id
+            description: "Foreign key to telegram_messages"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'telegram_messages')
+                  field: id
+          - name: file_name
+            description: "Name of the downloaded file"
+          - name: file_path
+            description: "Path to the downloaded file"
+          - name: file_size
+            description: "Size of the file in bytes"
+          - name: file_type
+            description: "Type of file (image, video, document)"
+          - name: mime_type
+            description: "MIME type of the file"
+          - name: width
+            description: "Width for images/videos"
+          - name: height
+            description: "Height for images/videos"
+          - name: duration
+            description: "Duration for videos"
+          - name: created_at
+            description: "When the record was created"
+
+      - name: business_info
+        description: "Business information extracted from messages"
+        columns:
+          - name: id
+            description: "Primary key for business info"
+            tests:
+              - unique
+              - not_null
+          - name: message_id
+            description: "Foreign key to telegram_messages"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'telegram_messages')
+                  field: id
+          - name: business_name
+            description: "Extracted business name"
+          - name: product_name
+            description: "Extracted product name"
+          - name: price
+            description: "Extracted price information"
+          - name: contact_info
+            description: "Extracted contact information"
+          - name: address
+            description: "Extracted address"
+          - name: opening_hours
+            description: "Extracted opening hours"
+          - name: delivery_info
+            description: "Extracted delivery information"
+          - name: extracted_at
+            description: "When the information was extracted"
+
+      - name: detected_objects
+        description: "Objects detected by YOLO in media files"
+        columns:
+          - name: id
+            description: "Primary key for detected objects"
+            tests:
+              - unique
+              - not_null
+          - name: message_id
+            description: "Foreign key to telegram_messages"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'telegram_messages')
+                  field: id
+          - name: media_file_id
+            description: "Foreign key to media_files"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'media_files')
+                  field: id
+          - name: object_class
+            description: "Class of the detected object"
+          - name: confidence
+            description: "Confidence score of the detection"
+          - name: bbox_x
+            description: "X coordinate of bounding box"
+          - name: bbox_y
+            description: "Y coordinate of bounding box"
+          - name: bbox_width
+            description: "Width of bounding box"
+          - name: bbox_height
+            description: "Height of bounding box"
+          - name: created_at
+            description: "When the detection was performed"
