@@ -88,12 +88,12 @@ class TelegramDataIntegrator:
             from src.database.config import db_config, get_db, init_database
             
             # Test database connection
-            engine = get_database_engine()
+            engine = db_config.engine
             with engine.connect() as conn:
                 logger.info("✅ Database connection successful")
             
             # Create tables
-            init_database()
+            db_config.create_tables()
             logger.info("✅ Database tables created")
             
             return True
@@ -154,10 +154,10 @@ class TelegramDataIntegrator:
         logger.info("📋 Generating summary report...")
         
         try:
-            from src.database.config import get_database_engine
+            from src.database.config import db_config
             from sqlalchemy import text
             
-            engine = get_database_engine()
+            engine = db_config.engine
             
             with engine.connect() as conn:
                 # Get basic statistics
