@@ -73,7 +73,7 @@ temp/
 *.tmp
 *.bak
 
-# Images and media
+# Images and media (keep sample data but exclude large files)
 *.jpg
 *.jpeg
 *.png
@@ -81,3 +81,32 @@ temp/
 *.mp4
 *.avi
 *.mov
+
+# Temporary and unnecessary files
+Untitled-*
+*.txt
+!requirements.txt
+!setup.txt
+
+# Model files (too large for git)
+*.pt
+*.pth
+*.onnx
+*.h5
+
+# Dagster
+dagster_logs/
+.dagster/
+
+# Additional Python
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Documentation builds
+docs/_build/
+site/
