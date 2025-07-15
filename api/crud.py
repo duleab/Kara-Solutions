@@ -339,6 +339,147 @@ def get_engagement_metrics(db: Session, channel_id: Optional[int] = None) -> Lis
     } for r in results]
 
 # ============================================================================
+# SPECIFIC BUSINESS FUNCTIONS (As required in Task 4)
+# ============================================================================
+
+def get_top_mentioned_products(db: Session, limit: int = 10) -> Dict[str, Any]:
+    """Get the most frequently mentioned medical products or drugs across all channels"""
+    # Common medical products and drugs keywords
+    medical_keywords = [
+        'paracetamol', 'ibuprofen', 'aspirin', 'amoxicillin', 'vitamin', 'tablet', 'capsule',
+        'syrup', 'injection', 'cream', 'ointment', 'drops', 'medicine', 'drug', 'pill',
+        'antibiotic', 'painkiller', 'supplement', 'pharmacy', 'prescription'
+    ]
+    
+    product_counts = {}
+    
+    # Query messages containing medical keywords
+    for keyword in medical_keywords:
+        count = db.query(TelegramMessage).filter(
+            func.lower(TelegramMessage.message_text).contains(keyword.lower())
+        ).count()
+        if count > 0:
+            product_counts[keyword] = count
+    
+    # Sort by frequency and return top products
+    sorted_products = sorted(product_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
+    
+    return {
+        "top_products": [
+            {"product_name": product, "mention_count": count}
+            for product, count in sorted_products
+        ],
+        "total_products_found": len(product_counts)
+    }
+
+def get_channel_activity(db: Session, channel_name: str, days: int = 30) -> Dict[str, Any]:
+    """Get posting activity for a specific channel"""
+    from datetime import datetime, timedelta
+    
+    # Calculate date range
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get channel info
+    channel = db.query(TelegramChannel).filter(
+        or_(
+            TelegramChannel.channel_name.ilike(f"%{channel_name}%"),
+            TelegramChannel.channel_name.ilike(f"%{channel_name}%")
+        )
+    ).first()
+    
+    if not channel:
+        return {"error": f"Channel '{channel_name}' not found"}
+    
+    # Get messages in date range
+    messages = db.query(TelegramMessage).filter(
+        and_(
+            TelegramMessage.channel_id == channel.id,
+            TelegramMessage.date >= start_date,
+            TelegramMessage.date <= end_date
+        )
+    ).all()
+    
+    # Calculate daily activity
+    daily_activity = {}
+    for msg in messages:
+        date_key = msg.date.strftime('%Y-%m-%d')
+        if date_key not in daily_activity:
+            daily_activity[date_key] = 0
+        daily_activity[date_key] += 1
+    
+    # Calculate metrics
+    total_messages = len(messages)
+    total_views = sum(msg.views or 0 for msg in messages)
+    total_forwards = sum(msg.forwards or 0 for msg in messages)
+    
+    return {
+        "channel_info": {
+            "name": channel.channel_name,
+            "id": channel.id
+        },
+        "period": {
+            "start_date": start_date.strftime('%Y-%m-%d'),
+            "end_date": end_date.strftime('%Y-%m-%d'),
+            "days": days
+        },
+        "activity_summary": {
+            "total_messages": total_messages,
+            "total_views": total_views,
+            "total_forwards": total_forwards,
+            "avg_messages_per_day": total_messages / days if days > 0 else 0
+        },
+        "daily_activity": daily_activity
+    }
+
+def search_messages(db: Session, query: str, limit: int = 100, channel_name: Optional[str] = None) -> Dict[str, Any]:
+    """Search for messages containing a specific keyword"""
+    # Base query
+    db_query = db.query(TelegramMessage).filter(
+        func.lower(TelegramMessage.message_text).contains(query.lower())
+    )
+    
+    # Filter by channel if specified
+    if channel_name:
+        channel = db.query(TelegramChannel).filter(
+            TelegramChannel.channel_name.ilike(f"%{channel_name}%")
+        ).first()
+        
+        if channel:
+            db_query = db_query.filter(TelegramMessage.channel_id == channel.id)
+        else:
+            return {"error": f"Channel '{channel_name}' not found", "results": []}
+    
+    # Execute query with limit
+    messages = db_query.order_by(desc(TelegramMessage.date)).limit(limit).all()
+    
+    # Format results
+    results = []
+    for msg in messages:
+        # Get channel info
+        channel = db.query(TelegramChannel).filter(
+            TelegramChannel.id == msg.channel_id
+        ).first()
+        
+        results.append({
+            "message_id": msg.id,
+            "channel_name": channel.channel_name if channel else "Unknown",
+            "message_text": msg.message_text[:500] + "..." if len(msg.message_text) > 500 else msg.message_text,
+            "message_date": msg.date.isoformat() if msg.date else None,
+            "views": msg.views,
+            "forwards": msg.forwards,
+            "replies": msg.replies,
+            "has_media": msg.has_media
+        })
+    
+    return {
+        "search_query": query,
+        "channel_filter": channel_name,
+        "total_results": len(results),
+        "results": results
+    }
+
+# ============================================================================
 # ADVANCED ANALYTICS
 # ============================================================================
 

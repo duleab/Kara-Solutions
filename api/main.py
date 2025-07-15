@@ -23,10 +23,10 @@ sys.path.append(str(project_root))
 from api.database import get_db
 from api import crud, schemas
 from src.database.models import Base
-from src.database.config import engine
+from src.database.config import db_config
 
 # Create database tables
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=db_config.engine)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -267,6 +267,41 @@ def get_object_detection_summary(
     """Get object detection summary statistics"""
     return crud.get_object_detection_summary(db)
 
+@app.get("/analytics/object-detection-insights", tags=["Analytics"])
+def get_object_detection_insights(
+    insight_type: Optional[str] = Query(None, description="Filter by insight type (daily_summary, object_popularity, channel_patterns)"),
+    channel_name: Optional[str] = Query(None, description="Filter by channel name"),
+    object_category: Optional[str] = Query(None, description="Filter by object category"),
+    db: Session = Depends(get_db)
+):
+    """Get comprehensive object detection insights from dbt models"""
+    return crud.get_object_detection_insights(db, insight_type=insight_type, channel_name=channel_name, object_category=object_category)
+
+@app.get("/analytics/medical-relevance-score", tags=["Analytics"])
+def get_medical_relevance_analysis(
+    min_score: Optional[float] = Query(0.5, ge=0.0, le=1.0, description="Minimum medical relevance score"),
+    channel_name: Optional[str] = Query(None, description="Filter by channel name"),
+    db: Session = Depends(get_db)
+):
+    """Get medical relevance analysis for detected objects"""
+    return crud.get_medical_relevance_analysis(db, min_score=min_score, channel_name=channel_name)
+
+@app.get("/analytics/detection-quality-metrics", tags=["Analytics"])
+def get_detection_quality_metrics(
+    db: Session = Depends(get_db)
+):
+    """Get detection quality metrics and confidence distribution"""
+    return crud.get_detection_quality_metrics(db)
+
+@app.get("/analytics/object-trends", tags=["Analytics"])
+def get_object_detection_trends(
+    days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
+    object_class: Optional[str] = Query(None, description="Filter by specific object class"),
+    db: Session = Depends(get_db)
+):
+    """Get object detection trends over time"""
+    return crud.get_object_detection_trends(db, days=days, object_class=object_class)
+
 @app.get("/analytics/business-insights", tags=["Analytics"])
 def get_business_insights(
     db: Session = Depends(get_db)
@@ -281,6 +316,37 @@ def get_engagement_metrics(
 ):
     """Get engagement metrics (views, forwards, replies)"""
     return crud.get_engagement_metrics(db, channel_id=channel_id)
+
+# ============================================================================
+# SPECIFIC BUSINESS ENDPOINTS (As required in Task 4)
+# ============================================================================
+
+@app.get("/api/reports/top-products", tags=["Business Reports"])
+def get_top_products(
+    limit: int = Query(10, ge=1, le=100, description="Number of top products to return"),
+    db: Session = Depends(get_db)
+):
+    """Returns the most frequently mentioned medical products or drugs across all channels"""
+    return crud.get_top_mentioned_products(db, limit=limit)
+
+@app.get("/api/channels/{channel_name}/activity", tags=["Business Reports"])
+def get_channel_activity(
+    channel_name: str,
+    days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
+    db: Session = Depends(get_db)
+):
+    """Returns the posting activity for a specific channel"""
+    return crud.get_channel_activity(db, channel_name=channel_name, days=days)
+
+@app.get("/api/search/messages", tags=["Business Reports"])
+def search_messages(
+    query: str = Query(..., description="Search term (e.g., 'paracetamol')"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of results"),
+    channel_name: Optional[str] = Query(None, description="Filter by specific channel"),
+    db: Session = Depends(get_db)
+):
+    """Searches for messages containing a specific keyword"""
+    return crud.search_messages(db, query=query, limit=limit, channel_name=channel_name)
 
 if __name__ == "__main__":
     uvicorn.run(
