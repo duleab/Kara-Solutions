@@ -25,7 +25,7 @@ project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
 from sqlalchemy.orm import Session
-from src.database.config import SessionLocal
+from src.database.config import db_config
 from src.database.models import TelegramChannel, TelegramMessage, MediaFile, BusinessInfo
 from api.database import init_db
 
@@ -64,7 +64,7 @@ class TelegramDataCleaner:
             raw_data_path: Path to raw Telegram data files
         """
         self.raw_data_path = Path(raw_data_path)
-        self.db = SessionLocal()
+        self.db = db_config.get_session()
         
         # Ensure logs directory exists
         Path("logs").mkdir(exist_ok=True)

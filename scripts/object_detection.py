@@ -29,7 +29,7 @@ except ImportError:
     sys.exit(1)
 
 from sqlalchemy.orm import Session
-from src.database.config import SessionLocal, engine
+from src.database.config import db_config
 from src.database.models import MediaFile, DetectedObject, TelegramMessage
 from api.database import init_db
 
@@ -60,7 +60,7 @@ class TelegramObjectDetector:
         self.model_path = model_path
         self.confidence_threshold = confidence_threshold
         self.model = None
-        self.db = SessionLocal()
+        self.db = db_config.SessionLocal()
         
         # Ensure logs directory exists
         Path("logs").mkdir(exist_ok=True)
@@ -305,7 +305,7 @@ class TelegramObjectDetector:
             ORDER BY do.created_at DESC
             """
             
-            df = pd.read_sql_query(query, engine)
+            df = pd.read_sql_query(query, db_config.engine)
             
             # Ensure output directory exists
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
