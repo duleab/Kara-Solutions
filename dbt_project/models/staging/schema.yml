@@ -1,0 +1,113 @@
+version: 2
+
+models:
+  - name: stg_telegram_messages
+    description: "Cleaned and standardized telegram messages with derived fields"
+    columns:
+      - name: message_pk
+        description: "Primary key for messages"
+        tests:
+          - unique
+          - not_null
+      - name: channel_id
+        description: "Channel username identifier"
+        tests:
+          - not_null
+      - name: message_text
+        description: "Cleaned message text content"
+      - name: message_date
+        description: "Timestamp when message was posted"
+        tests:
+          - not_null
+          - data_freshness:
+              max_age_hours: 168  # 1 week
+      - name: message_date_only
+        description: "Date component only (YYYY-MM-DD)"
+        tests:
+          - not_null
+      - name: message_hour
+        description: "Hour of day when message was posted (0-23)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 23
+      - name: has_media
+        description: "Boolean flag indicating if message contains media"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+      - name: engagement_score
+        description: "Calculated engagement score based on views, forwards, replies"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+  - name: stg_telegram_channels
+    description: "Cleaned and categorized telegram channel information"
+    columns:
+      - name: channel_pk
+        description: "Primary key for channels"
+        tests:
+          - unique
+          - not_null
+      - name: username
+        description: "Channel username (unique identifier)"
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Channel display title"
+      - name: channel_category
+        description: "Categorized channel type based on title and description"
+        tests:
+          - accepted_values:
+              values: ['Medical', 'Pharmacy', 'Hospital', 'Clinic', 'Other']
+      - name: is_verified
+        description: "Boolean indicating if channel appears to be verified/official"
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: days_since_creation
+        description: "Number of days since channel was created"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+  - name: stg_business_info
+    description: "Cleaned and validated business information extracted from messages"
+    columns:
+      - name: business_info_pk
+        description: "Primary key for business information records"
+        tests:
+          - unique
+          - not_null
+      - name: message_id
+        description: "Foreign key to telegram messages"
+        tests:
+          - not_null
+      - name: business_name
+        description: "Cleaned business name"
+      - name: phone_number
+        description: "Cleaned and validated phone number"
+        tests:
+          - ethiopian_phone_format
+      - name: business_category
+        description: "Categorized business type"
+        tests:
+          - accepted_values:
+              values: ['Pharmacy', 'Clinic', 'Hospital', 'Dental', 'Laboratory', 'Medical Services', 'Medical Equipment', 'Insurance', 'Emergency Services', 'Therapy', 'Other']
+      - name: has_complete_info
+        description: "Boolean indicating if business has complete contact information"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+      - name: business_completeness_score
+        description: "Score from 0-5 indicating completeness of business information"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 5

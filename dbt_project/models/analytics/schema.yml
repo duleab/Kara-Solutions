@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  - name: object_detection_analytics
+    description: "Comprehensive analytics combining object detection data with media files, messages, and channels"
+    columns:
+      - name: detection_pk
+        description: "Primary key for detected objects"
+        tests:
+          - unique
+          - not_null
+      - name: message_id
+        description: "Foreign key to messages table"
+        tests:
+          - not_null
+      - name: media_file_id
+        description: "Foreign key to media files table"
+        tests:
+          - not_null
+      - name: object_class
+        description: "Class of the detected object (e.g., bottle, person, scissors)"
+        tests:
+          - not_null
+      - name: confidence
+        description: "Detection confidence score (0.0 to 1.0)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0.0
+              max_value: 1.0
+      - name: confidence_level
+        description: "Categorized confidence level (high, medium, low)"
+        tests:
+          - accepted_values:
+              values: ['high', 'medium', 'low']
+      - name: object_category
+        description: "Medical context category for the object"
+        tests:
+          - accepted_values:
+              values: ['containers', 'people', 'documents_devices', 'medical_tools', 'other']
+      - name: bbox_area
+        description: "Area of the bounding box (width * height)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: detection_created_at
+        description: "Timestamp when detection was performed"
+        tests:
+          - not_null
+      - name: file_type
+        description: "Type of media file"
+      - name: file_size
+        description: "Size of the media file in bytes"
+      - name: file_size_category
+        description: "Categorized file size (small, medium, large)"
+        tests:
+          - accepted_values:
+              values: ['small', 'medium', 'large']
+      - name: channel_name
+        description: "Name of the Telegram channel"
+      - name: channel_type
+        description: "Type of the Telegram channel"
+      - name: detection_quality
+        description: "Overall detection quality assessment"
+        tests:
+          - accepted_values:
+              values: ['excellent', 'good', 'fair', 'poor']
+
+  - name: object_detection_insights
+    description: "Business intelligence insights derived from object detection analytics"
+    columns:
+      - name: insight_type
+        description: "Type of insight (daily_summary, object_popularity, channel_patterns)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['daily_summary', 'object_popularity', 'channel_patterns']
+      - name: dimension_1
+        description: "Primary dimension for the insight"
+        tests:
+          - not_null
+      - name: dimension_2
+        description: "Secondary dimension for the insight"
+      - name: dimension_3
+        description: "Tertiary dimension for the insight"
+      - name: metric_1
+        description: "Primary metric value"
+        tests:
+          - not_null
+      - name: metric_2
+        description: "Secondary metric value"
+      - name: metric_3
+        description: "Tertiary metric value"
+      - name: metric_4
+        description: "Quaternary metric value"
+      - name: created_at
+        description: "Timestamp when insight was generated"
+        tests:
+          - not_null
+
+# Data quality tests
+tests:
+  - name: test_detection_confidence_distribution
+    description: "Ensure we have a reasonable distribution of confidence levels"
+    sql: |
+      select count(*) as high_confidence_count
+      from {{ ref('object_detection_analytics') }}
+      where confidence_level = 'high'
+      having count(*) < 1
+  
+  - name: test_medical_objects_detected
+    description: "Ensure medical-relevant objects are being detected"
+    sql: |
+      select count(*) as medical_objects_count
+      from {{ ref('object_detection_analytics') }}
+      where object_category in ('medical_tools', 'containers')
+      having count(*) < 1
+  
+  - name: test_detection_recency
+    description: "Ensure we have recent detections"
+    sql: |
+      select count(*) as recent_detections
+      from {{ ref('object_detection_analytics') }}
+      where detection_created_at >= current_date - interval '7 days'
+      having count(*) < 1

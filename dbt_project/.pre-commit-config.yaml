@@ -1,0 +1,54 @@
+# Pre-commit hooks for dbt project quality assurance
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+
+  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
+    rev: v1.2.0
+    hooks:
+      - id: check-script-semicolon
+      - id: check-script-has-no-table-name
+      - id: dbt-test
+      - id: dbt-docs-generate
+      - id: check-model-has-description
+      - id: check-model-has-meta-keys
+        args: ['--meta-keys', 'owner,maturity']
+      - id: check-model-has-tests
+        args: ['--test-cnt', '1', '--tests', 'unique,not_null']
+      - id: check-model-columns-have-desc
+      - id: check-source-columns-have-desc
+      - id: check-source-has-freshness
+        args: ['--freshness', 'error_after,warn_after']
+      - id: check-source-has-loader
+      - id: check-source-has-meta-keys
+        args: ['--meta-keys', 'owner']
+      - id: check-source-has-tests
+        args: ['--tests', 'unique,not_null']
+      - id: check-source-table-has-description
+
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 2.3.5
+    hooks:
+      - id: sqlfluff-lint
+        args: [--dialect=postgres]
+      - id: sqlfluff-fix
+        args: [--dialect=postgres]
+        stages: [manual]
+
+# Configuration for specific tools
+default_language_version:
+  python: python3.9
+
+# Exclude certain files/directories
+exclude: |
+  (?x)^(
+      target/.*|
+      dbt_packages/.*|
+      logs/.*
+  )$

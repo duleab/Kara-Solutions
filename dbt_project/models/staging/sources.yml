@@ -1,7 +1,7 @@
 version: 2
 
 sources:
-  - name: raw
+  - name: telegram_data
     description: "Raw data from Telegram scraping"
     tables:
       - name: telegram_channels
@@ -12,24 +12,24 @@ sources:
             tests:
               - unique
               - not_null
-          - name: channel_name
+          - name: username
             description: "Channel username"
             tests:
               - not_null
-          - name: channel_url
-            description: "Full URL to the channel"
-          - name: channel_id
-            description: "Telegram's internal channel ID"
           - name: title
             description: "Channel display title"
-          - name: description
+          - name: about
             description: "Channel description"
           - name: participants_count
             description: "Number of channel participants"
-          - name: created_at
-            description: "When the record was created"
-          - name: updated_at
-            description: "When the record was last updated"
+          - name: is_broadcast
+            description: "Whether the channel is a broadcast channel"
+          - name: is_megagroup
+            description: "Whether the channel is a megagroup"
+          - name: created_date
+            description: "When the channel was created"
+          - name: scraped_at
+            description: "When the channel was scraped"
 
       - name: telegram_messages
         description: "Messages scraped from Telegram channels"
@@ -37,27 +37,28 @@ sources:
           - name: id
             description: "Primary key for messages"
             tests:
-              - unique
               - not_null
-          - name: message_id
-            description: "Telegram's message ID"
-            tests:
-              - not_null
-          - name: channel_id
+          - name: channel_username
             description: "Foreign key to telegram_channels"
             tests:
               - not_null
               - relationships:
-                  to: source('raw', 'telegram_channels')
-                  field: id
-          - name: sender_id
-            description: "ID of the message sender"
-          - name: message_text
-            description: "Text content of the message"
+                  to: source('telegram_data', 'telegram_channels')
+                  field: username
           - name: date
             description: "When the message was posted"
             tests:
               - not_null
+          - name: text
+            description: "Text content of the message"
+          - name: sender_id
+            description: "ID of the message sender"
+          - name: sender_username
+            description: "Username of the message sender"
+          - name: sender_first_name
+            description: "First name of the message sender"
+          - name: sender_last_name
+            description: "Last name of the message sender"
           - name: views
             description: "Number of views"
           - name: forwards
@@ -72,8 +73,10 @@ sources:
             description: "Whether the message contains media"
           - name: media_type
             description: "Type of media attached"
-          - name: created_at
-            description: "When the record was created"
+          - name: media_file_path
+            description: "Path to the media file"
+          - name: raw_data
+            description: "Raw message data in JSON format"
 
       - name: media_files
         description: "Media files downloaded from messages"
@@ -83,29 +86,20 @@ sources:
             tests:
               - unique
               - not_null
+          - name: channel_username
+            description: "Channel username"
+            tests:
+              - not_null
           - name: message_id
             description: "Foreign key to telegram_messages"
             tests:
               - not_null
-              - relationships:
-                  to: source('raw', 'telegram_messages')
-                  field: id
-          - name: file_name
-            description: "Name of the downloaded file"
           - name: file_path
             description: "Path to the downloaded file"
+          - name: media_type
+            description: "Type of media file"
           - name: file_size
             description: "Size of the file in bytes"
-          - name: file_type
-            description: "Type of file (image, video, document)"
-          - name: mime_type
-            description: "MIME type of the file"
-          - name: width
-            description: "Width for images/videos"
-          - name: height
-            description: "Height for images/videos"
-          - name: duration
-            description: "Duration for videos"
           - name: created_at
             description: "When the record was created"
 
@@ -117,27 +111,22 @@ sources:
             tests:
               - unique
               - not_null
+          - name: channel_username
+            description: "Channel username"
+            tests:
+              - not_null
           - name: message_id
             description: "Foreign key to telegram_messages"
             tests:
               - not_null
-              - relationships:
-                  to: source('raw', 'telegram_messages')
-                  field: id
           - name: business_name
             description: "Extracted business name"
-          - name: product_name
-            description: "Extracted product name"
-          - name: price
-            description: "Extracted price information"
-          - name: contact_info
-            description: "Extracted contact information"
-          - name: address
-            description: "Extracted address"
-          - name: opening_hours
-            description: "Extracted opening hours"
-          - name: delivery_info
-            description: "Extracted delivery information"
+          - name: phone_number
+            description: "Extracted phone number"
+          - name: service_type
+            description: "Type of service offered"
+          - name: location
+            description: "Business location"
           - name: extracted_at
             description: "When the information was extracted"
 
@@ -153,15 +142,12 @@ sources:
             description: "Foreign key to telegram_messages"
             tests:
               - not_null
-              - relationships:
-                  to: source('raw', 'telegram_messages')
-                  field: id
           - name: media_file_id
             description: "Foreign key to media_files"
             tests:
               - not_null
               - relationships:
-                  to: source('raw', 'media_files')
+                  to: source('telegram_data', 'media_files')
                   field: id
           - name: object_class
             description: "Class of the detected object"

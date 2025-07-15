@@ -3,11 +3,13 @@
 with source_data as (
     select
         id as message_pk,
-        message_id,
-        channel_id,
+        channel_username as channel_id,
         sender_id,
-        message_text,
+        text as message_text,
         date as message_date,
+        sender_username,
+        sender_first_name,
+        sender_last_name,
         views,
         forwards,
         replies,
@@ -15,14 +17,14 @@ with source_data as (
         reply_to_msg_id,
         has_media,
         media_type,
-        created_at
-    from {{ source('raw', 'telegram_messages') }}
+        media_file_path,
+        raw_data
+    from {{ source('telegram_data', 'telegram_messages') }}
 ),
 
 cleaned_data as (
     select
         message_pk,
-        message_id,
         channel_id,
         sender_id,
         
@@ -36,13 +38,18 @@ cleaned_data as (
         message_date,
         
         -- Ensure non-negative metrics
-        greatest(coalesce(views, 0), 0) as views,
-        greatest(coalesce(forwards, 0), 0) as forwards,
-        greatest(coalesce(replies, 0), 0) as replies,
+        case when coalesce(views, 0) < 0 then 0 else coalesce(views, 0) end as views,
+        case when coalesce(forwards, 0) < 0 then 0 else coalesce(forwards, 0) end as forwards,
+        case when coalesce(replies, 0) < 0 then 0 else coalesce(replies, 0) end as replies,
         
         coalesce(is_reply, false) as is_reply,
         reply_to_msg_id,
         coalesce(has_media, false) as has_media,
+        
+        -- Sender information
+        sender_username,
+        sender_first_name,
+        sender_last_name,
         
         case
             when media_type is null then 'none'
@@ -52,14 +59,12 @@ cleaned_data as (
             else 'other'
         end as media_type_clean,
         
-        created_at,
-        
         -- Extract time components
         extract(hour from message_date) as message_hour,
         extract(dow from message_date) as day_of_week,
-        date_trunc('day', message_date) as message_date_only,
-        date_trunc('week', message_date) as message_week,
-        date_trunc('month', message_date) as message_month,
+        message_date::date as message_date_only,
+        date_trunc('week', message_date)::date as message_week,
+        date_trunc('month', message_date)::date as message_month,
         
         -- Calculate message length
         case
@@ -80,7 +85,7 @@ cleaned_data as (
     from source_data
     where message_date is not null
       and message_date >= '2020-01-01'  -- Filter out obviously invalid dates
-      and message_date <= current_timestamp
+      and message_date <= now()
 )
 
 select * from cleaned_data

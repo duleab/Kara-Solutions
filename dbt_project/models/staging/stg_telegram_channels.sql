@@ -3,15 +3,15 @@
 with source_data as (
     select
         id as channel_id,
-        channel_name,
-        channel_url,
-        channel_id as telegram_channel_id,
+        username as channel_name,
+        username as channel_url,
+        id as telegram_channel_id,
         title,
-        description,
+        about as description,
         participants_count,
-        created_at,
-        updated_at
-    from {{ source('raw', 'telegram_channels') }}
+        created_date as created_at,
+        scraped_at as updated_at
+    from {{ source('telegram_data', 'telegram_channels') }}
 ),
 
 cleaned_data as (
@@ -34,7 +34,7 @@ cleaned_data as (
         end as channel_category,
         
         -- Calculate days since creation
-        {{ dbt_utils.datediff('created_at', 'current_timestamp', 'day') }} as days_since_creation
+        extract(days from (now() - created_at)) as days_since_creation
         
     from source_data
 )

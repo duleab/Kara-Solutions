@@ -1,0 +1,190 @@
+# dbt Project Properties and Governance
+# This file defines project-wide standards and metadata
+
+version: 2
+
+# Project metadata
+project:
+  name: telegram_analytics
+  version: 1.0.0
+  description: "Ethiopian Medical Business Telegram Analytics Pipeline"
+  owner: "Data Engineering Team"
+  contact: "data-team@company.com"
+  documentation_url: "https://docs.company.com/telegram-analytics"
+  repository_url: "https://github.com/company/telegram-analytics"
+
+# Data governance standards
+governance:
+  data_classification:
+    public: "Data that can be shared publicly"
+    internal: "Data for internal company use only"
+    confidential: "Sensitive data requiring special handling"
+    restricted: "Highly sensitive data with strict access controls"
+  
+  retention_policies:
+    raw_data: "2 years"
+    processed_data: "5 years"
+    aggregated_data: "10 years"
+    snapshots: "7 years"
+  
+  quality_standards:
+    test_coverage_minimum: 80  # Percentage of models that must have tests
+    documentation_coverage_minimum: 90  # Percentage of models that must be documented
+    freshness_sla_hours: 24  # Maximum acceptable data age
+
+# Model standards
+model_standards:
+  naming_conventions:
+    staging: "stg_<source>_<table>"
+    intermediate: "int_<business_area>_<description>"
+    marts: "<business_area>_<description>"
+    snapshots: "<table>_snapshot"
+  
+  required_meta_keys:
+    - owner
+    - maturity  # development, testing, production
+    - data_classification
+    - business_area
+  
+  materialization_guidelines:
+    staging: "view"  # Always views for flexibility
+    intermediate: "ephemeral"  # Ephemeral for simple transformations
+    marts: "table"  # Tables for performance
+    large_tables: "incremental"  # Incremental for large datasets
+
+# Testing standards
+testing_standards:
+  required_tests:
+    primary_keys:
+      - unique
+      - not_null
+    foreign_keys:
+      - relationships
+    critical_fields:
+      - not_null
+    business_rules:
+      - accepted_values
+      - dbt_utils.accepted_range
+  
+  custom_tests:
+    data_freshness:
+      description: "Ensures data is updated within SLA"
+      severity: "error"
+    ethiopian_phone_format:
+      description: "Validates Ethiopian phone number formats"
+      severity: "warn"
+
+# Documentation standards
+documentation_standards:
+  required_descriptions:
+    - models
+    - columns
+    - sources
+    - macros
+  
+  description_guidelines:
+    models: "Business purpose and key transformations"
+    columns: "Business meaning and data type"
+    sources: "Data origin and refresh frequency"
+    macros: "Purpose, parameters, and usage examples"
+
+# Performance standards
+performance_standards:
+  query_timeout_seconds: 300
+  max_table_size_gb: 10
+  index_recommendations:
+    fact_tables:
+      - "Primary key"
+      - "Date columns for time-based queries"
+      - "Foreign keys for joins"
+    dimension_tables:
+      - "Primary key"
+      - "Commonly filtered columns"
+
+# Security and privacy
+security_standards:
+  pii_handling:
+    identification: "Use dbt meta tags to identify PII columns"
+    masking: "Apply data masking in non-production environments"
+    encryption: "Encrypt PII data at rest and in transit"
+  
+  access_control:
+    principle: "Least privilege access"
+    review_frequency: "Quarterly"
+    approval_process: "Manager and data owner approval required"
+
+# Environment configurations
+environments:
+  development:
+    target_schema_suffix: "_dev"
+    full_refresh_allowed: true
+    test_severity: "warn"
+  
+  staging:
+    target_schema_suffix: "_staging"
+    full_refresh_allowed: false
+    test_severity: "error"
+  
+  production:
+    target_schema_suffix: ""
+    full_refresh_allowed: false
+    test_severity: "error"
+    monitoring_enabled: true
+
+# Monitoring and alerting
+monitoring:
+  metrics:
+    - model_run_time
+    - test_failure_rate
+    - data_freshness
+    - query_performance
+  
+  alerts:
+    test_failures:
+      severity: "high"
+      notification: "immediate"
+    data_freshness:
+      severity: "medium"
+      notification: "within_1_hour"
+    performance_degradation:
+      severity: "low"
+      notification: "daily_summary"
+
+# Change management
+change_management:
+  approval_required:
+    - schema_changes
+    - materialization_changes
+    - breaking_changes
+  
+  testing_requirements:
+    - unit_tests
+    - integration_tests
+    - performance_tests
+    - backward_compatibility_tests
+  
+  deployment_process:
+    - code_review
+    - automated_testing
+    - staging_deployment
+    - production_deployment
+
+# Compliance and auditing
+compliance:
+  audit_trail:
+    - model_lineage
+    - data_transformations
+    - access_logs
+    - change_history
+  
+  regulatory_requirements:
+    - data_protection_laws
+    - industry_standards
+    - company_policies
+  
+  reporting:
+    frequency: "monthly"
+    stakeholders:
+      - data_governance_committee
+      - compliance_team
+      - business_stakeholders

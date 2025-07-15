@@ -24,11 +24,9 @@ models:
     # Config indicated by + and applies to all files under models/staging/
     staging:
       +materialized: view
-      +schema: staging
     # Config indicated by + and applies to all files under models/marts/
     marts:
       +materialized: table
-      +schema: marts
       core:
         +materialized: table
       business:
@@ -37,12 +35,11 @@ models:
 # Configuring seeds
 seeds:
   telegram_analytics:
-    +schema: seeds
+    +materialized: seed
 
 # Configuring tests
 tests:
   +store_failures: true
-  +schema: test_failures
 
 # Variables
 vars:

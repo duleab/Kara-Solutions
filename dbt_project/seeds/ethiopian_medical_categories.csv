@@ -1,0 +1,11 @@
+category_id,category_name,category_description,keywords
+1,Pharmacy,Pharmacies and drug stores,"pharmacy,drug,medicine,አፋርማሲ"
+2,Clinic,Medical clinics and health centers,"clinic,health center,ክሊኒክ"
+3,Hospital,Hospitals and medical centers,"hospital,medical center,ሆስፒታል"
+4,Dental,Dental clinics and services,"dental,dentist,ጥርስ"
+5,Laboratory,Medical laboratories and diagnostic centers,"lab,laboratory,diagnostic,ላቦራቶሪ"
+6,Medical Equipment,Medical equipment suppliers,"equipment,medical device,መሳሪያ"
+7,Insurance,Health insurance providers,"insurance,ኢንሹራንስ"
+8,Emergency Services,Ambulance and emergency services,"ambulance,emergency,አምቡላንስ"
+9,Therapy,Physical therapy and rehabilitation,"therapy,rehabilitation,ቴራፒ"
+10,Specialist,Specialist medical services,"specialist,cardiology,neurology"

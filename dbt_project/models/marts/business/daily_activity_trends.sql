@@ -7,15 +7,11 @@ with fact_messages as (
 daily_metrics as (
     select
         message_date_only as activity_date,
-        channel_name,
-        channel_category,
-        business_category,
+        channel_id,
         
         -- Daily counts
         count(*) as daily_messages,
-        count(case when has_business_info then 1 end) as daily_business_messages,
         count(case when has_media then 1 end) as daily_media_messages,
-        count(distinct business_name) as daily_unique_businesses,
         
         -- Daily engagement
         sum(views) as daily_views,
@@ -26,7 +22,6 @@ daily_metrics as (
         -- Daily averages
         avg(views) as avg_daily_views_per_message,
         avg(message_length) as avg_daily_message_length,
-        avg(price) as avg_daily_price,
         
         -- Content distribution
         count(case when message_type = 'text_only' then 1 end) as text_only_messages,
@@ -34,17 +29,15 @@ daily_metrics as (
         count(case when message_type = 'media_only' then 1 end) as media_only_messages,
         
         -- Time patterns
-        count(case when time_of_day = 'Morning' then 1 end) as morning_messages,
-        count(case when time_of_day = 'Afternoon' then 1 end) as afternoon_messages,
-        count(case when time_of_day = 'Evening' then 1 end) as evening_messages,
-        count(case when time_of_day = 'Night' then 1 end) as night_messages
+        count(case when message_hour between 6 and 11 then 1 end) as morning_messages,
+        count(case when message_hour between 12 and 17 then 1 end) as afternoon_messages,
+        count(case when message_hour between 18 and 22 then 1 end) as evening_messages,
+        count(case when message_hour between 23 and 5 then 1 end) as night_messages
         
     from fact_messages
     group by 
         message_date_only,
-        channel_name,
-        channel_category,
-        business_category
+        channel_id
 ),
 
 with_trends as (
@@ -53,37 +46,37 @@ with_trends as (
         
         -- Calculate 7-day moving averages
         avg(daily_messages) over (
-            partition by channel_name, business_category
+            partition by channel_id
             order by activity_date
             rows between 6 preceding and current row
         ) as messages_7day_avg,
         
         avg(daily_engagement_score) over (
-            partition by channel_name, business_category
+            partition by channel_id
             order by activity_date
             rows between 6 preceding and current row
         ) as engagement_7day_avg,
         
         avg(daily_views) over (
-            partition by channel_name, business_category
+            partition by channel_id
             order by activity_date
             rows between 6 preceding and current row
         ) as views_7day_avg,
         
         -- Calculate day-over-day changes
         daily_messages - lag(daily_messages, 1) over (
-            partition by channel_name, business_category
+            partition by channel_id
             order by activity_date
         ) as messages_day_change,
         
         daily_engagement_score - lag(daily_engagement_score, 1) over (
-            partition by channel_name, business_category
+            partition by channel_id
             order by activity_date
         ) as engagement_day_change,
         
         -- Calculate week-over-week changes
         daily_messages - lag(daily_messages, 7) over (
-            partition by channel_name, business_category
+            partition by channel_id
             order by activity_date
         ) as messages_week_change,
         
@@ -92,8 +85,8 @@ with_trends as (
         to_char(activity_date, 'Day') as day_name,
         
         -- Week and month identifiers
-        date_trunc('week', activity_date) as week_start,
-        date_trunc('month', activity_date) as month_start
+        date_trunc('week', activity_date)::date as week_start,
+        date_trunc('month', activity_date)::date as month_start
         
     from daily_metrics
 ),
@@ -105,12 +98,12 @@ final as (
         -- Calculate percentage changes
         case
             when lag(daily_messages, 1) over (
-                partition by channel_name, business_category
+                partition by channel_id
                 order by activity_date
             ) > 0
             then round(
                 (messages_day_change::float / lag(daily_messages, 1) over (
-                    partition by channel_name, business_category
+                    partition by channel_id
                     order by activity_date
                 )) * 100, 2
             )
@@ -119,12 +112,12 @@ final as (
         
         case
             when lag(daily_messages, 7) over (
-                partition by channel_name, business_category
+                partition by channel_id
                 order by activity_date
             ) > 0
             then round(
                 (messages_week_change::float / lag(daily_messages, 7) over (
-                    partition by channel_name, business_category
+                    partition by channel_id
                     order by activity_date
                 )) * 100, 2
             )
@@ -149,4 +142,4 @@ final as (
 )
 
 select * from final
-order by activity_date desc, channel_name, business_category
+order by activity_date desc, channel_id
