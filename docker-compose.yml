@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13
+    container_name: telegram_postgres
+    environment:
+      POSTGRES_DB: telegram_warehouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./setup_postgresql.sql:/docker-entrypoint-initdb.d/setup.sql
+    networks:
+      - telegram_network
+
+  # FastAPI Application
+  api:
+    build: .
+    container_name: telegram_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/telegram_warehouse
+      - PYTHONPATH=/app
+    depends_on:
+      - postgres
+    volumes:
+      - ./data:/app/data
+      - ./dbt_project:/app/dbt_project
+    networks:
+      - telegram_network
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # dbt Service (for running transformations)
+  dbt:
+    build: .
+    container_name: telegram_dbt
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/telegram_warehouse
+      - PYTHONPATH=/app
+    depends_on:
+      - postgres
+    volumes:
+      - ./dbt_project:/app/dbt_project
+      - ./data:/app/data
+    networks:
+      - telegram_network
+    command: tail -f /dev/null  # Keep container running
+
+  # Dagster (Pipeline Orchestration)
+  dagster:
+    build: .
+    container_name: telegram_dagster
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/telegram_warehouse
+      - PYTHONPATH=/app
+    depends_on:
+      - postgres
+    volumes:
+      - ./data:/app/data
+      - ./dbt_project:/app/dbt_project
+      - ./dagster_pipeline:/app/dagster_pipeline
+    networks:
+      - telegram_network
+    command: dagster dev -h 0.0.0.0 -p 3000
+
+volumes:
+  postgres_data:
+
+networks:
+  telegram_network:
+    driver: bridge
