@@ -80,10 +80,13 @@ cryptography==40.0.2
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 
-# Optional: Dagster (for advanced pipeline orchestration)
-# dagster==1.3.3
-# dagster-webserver==1.3.3
+# Dagster (for pipeline orchestration)
+dagster==1.3.3
+dagster-webserver==1.3.3
+dagster-postgres==0.19.3
+dagster-dbt==0.19.3
 
-# Optional: dbt (for data transformation)
-# dbt-core==1.4.5
-# dbt-sqlite==1.4.0
+# dbt (for data transformation)
+dbt-core==1.4.5
+dbt-postgres==1.4.5
+dbt-sqlite==1.4.0
