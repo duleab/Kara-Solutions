@@ -1,0 +1,59 @@
+# Dagster workspace configuration
+
+load_from:
+  - python_package:
+      package_name: dagster_project
+      attribute: defs
+
+# Optional: Configure storage
+storage:
+  postgres:
+    postgres_db:
+      username: postgres
+      password: postgres
+      hostname: localhost
+      db_name: telegram_data
+      port: 5432
+
+# Optional: Configure compute log storage
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir: ./dagster_logs
+
+# Optional: Configure event log storage
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: DagsterPostgresEventLogStorage
+  config:
+    postgres_db:
+      username: postgres
+      password: postgres
+      hostname: localhost
+      db_name: telegram_data
+      port: 5432
+
+# Optional: Configure run storage
+run_storage:
+  module: dagster_postgres.run_storage
+  class: DagsterPostgresRunStorage
+  config:
+    postgres_db:
+      username: postgres
+      password: postgres
+      hostname: localhost
+      db_name: telegram_data
+      port: 5432
+
+# Optional: Configure schedule storage
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: DagsterPostgresScheduleStorage
+  config:
+    postgres_db:
+      username: postgres
+      password: postgres
+      hostname: localhost
+      db_name: telegram_data
+      port: 5432
