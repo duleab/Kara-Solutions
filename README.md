@@ -404,9 +404,4 @@ After completing Tasks 1 and 2:
 - Add database indexes on frequently queried columns
 - Monitor query performance and optimize
 
-## Contributing
 
-1. Follow the established code structure
-2. Add tests for new models
-3. Update documentation
-4. Use meaningful commit messages
