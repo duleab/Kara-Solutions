@@ -1,10 +1,20 @@
-# Ethiopian Medical Business Telegram Analytics Pipeline
+# Ethiopian Medical Business Telegram Analytics Platform
 
-## 🚀 Enhanced Implementation
+A comprehensive data product that collects, processes, and analyzes medical-related content from Ethiopian Telegram channels. This platform implements modern data engineering practices to deliver actionable insights for healthcare business intelligence.
 
-This is an enhanced version of the Ethiopian Medical Business Telegram Analytics Pipeline, inspired by the Kara-Solutions implementation but with significant improvements and additional features.
+## Architecture Overview
 
-## 📋 Table of Contents
+This project implements a complete end-to-end data pipeline with the following components:
+
+- **Data Collection**: Robust Telegram scraping using Telethon API
+- **Data Storage**: PostgreSQL database with SQLAlchemy ORM
+- **Data Transformation**: dbt for ELT processes and star schema modeling
+- **Machine Learning**: YOLO v8 for medical product object detection
+- **API Layer**: FastAPI for analytical endpoints with comprehensive validation
+- **Orchestration**: Dagster for pipeline automation and scheduling
+- **Containerization**: Docker for reproducible deployments
+
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
@@ -19,7 +29,7 @@ This is an enhanced version of the Ethiopian Medical Business Telegram Analytics
 - [Contributing](#contributing)
 - [License](#license)
 
-## 🎯 Overview
+## Overview
 
 This project provides a comprehensive solution for analyzing Ethiopian medical businesses through Telegram channel data. It combines data scraping, natural language processing, computer vision, and analytics to extract valuable business insights.
 
@@ -32,29 +42,35 @@ This project provides a comprehensive solution for analyzing Ethiopian medical b
 - **Data Pipeline**: Automated ETL processes for data cleaning and transformation
 - **Real-time Monitoring**: Live tracking of channel activities and trends
 
-## ✨ Features
+## Key Features
 
-### 🔍 Data Collection
+### Data Collection
 - Multi-channel Telegram scraping with rate limiting
 - Media file download and organization
 - Metadata extraction and enrichment
 - Incremental data updates
 
-### 🧠 AI-Powered Analysis
+### AI-Powered Analysis
 - Business information extraction using NLP
-- Medical product detection with YOLOv8
+- **Enhanced YOLO Object Detection**: YOLOv8/YOLOv11 integration for medical equipment detection
+- Medical relevance scoring for detected objects
+- Confidence-based quality assessment
 - Sentiment analysis of messages
 - Trend identification and forecasting
 
-### 📊 Analytics & Insights
+### Analytics and Insights
 - Channel performance metrics
 - Business discovery and profiling
+- **Object Detection Analytics**: Comprehensive insights from YOLO detections
+- Medical relevance analysis
+- Detection quality metrics and trends
 - Market trend analysis
 - Engagement pattern recognition
 
-### 🌐 API & Integration
-- FastAPI-based REST API
+### API and Integration
+- FastAPI-based REST API with enhanced object detection endpoints
 - Real-time data access
+- **YOLO Analytics API**: Specialized endpoints for object detection insights
 - Comprehensive documentation
 - Easy integration with external systems
 
@@ -182,6 +198,65 @@ This project now includes complete integration for your pre-scraped Telegram dat
 - **Business Intelligence**: Contact coverage, delivery options, location analysis
 - **Activity Trends**: Daily posting patterns, media vs text content
 
+## YOLO Object Detection Integration
+
+### Overview
+Comprehensive computer vision integration using YOLOv8/YOLOv11 for medical equipment and product detection in Telegram media files.
+
+### Key Features
+- **Enhanced Object Detection**: YOLOv8/YOLOv11 models for medical context
+- **Medical Relevance Scoring**: Specialized scoring for healthcare objects
+- **Confidence-based Quality Assessment**: Multi-tier confidence evaluation
+- **Database Integration**: Seamless storage of detection results
+- **Analytics Pipeline**: dbt models for detection insights
+- **API Endpoints**: RESTful access to detection analytics
+
+### Supported Object Categories
+- **Medical Tools**: Scissors, syringes, stethoscopes
+- **Containers**: Medicine bottles, specimen cups
+- **People**: Patients, medical staff
+- **Documents & Devices**: Medical records, phones
+- **Other**: General objects with medical context scoring
+
+### Detection Pipeline
+1. **Image Processing**: Automated detection on images in `data/raw/images`
+2. **Result Storage**: Annotated images saved to `data/raw/DETECTED results`
+3. **Database Integration**: Detection metadata stored in PostgreSQL
+4. **Analytics Generation**: dbt models create business intelligence
+5. **API Access**: RESTful endpoints for detection insights
+
+### Usage
+
+#### Quick Start - Complete Integration
+```bash
+# Run complete YOLO integration pipeline
+python run_complete_yolo_integration.py
+```
+
+#### Manual Object Detection
+```bash
+# Run enhanced object detection script
+python scripts/enhanced_object_detection.py
+```
+
+#### API Access
+```bash
+# Start the API server
+python run_api.py
+
+# Access detection endpoints
+curl http://localhost:8000/detections/
+curl http://localhost:8000/analytics/object-detection-insights
+curl http://localhost:8000/analytics/medical-relevance-score
+```
+
+### Detection Analytics
+- **Daily Detection Summary**: Object counts and confidence by channel
+- **Object Popularity Rankings**: Most detected objects across channels
+- **Channel Detection Patterns**: Unique detection profiles per channel
+- **Medical Relevance Analysis**: Healthcare-specific object scoring
+- **Quality Metrics**: Confidence distribution and detection trends
+
 ## Task 1: Data Scraping and Collection
 
 ### Overview
@@ -248,6 +323,28 @@ Marts Layer (Business Logic)
     ↓
 Analytics & Reporting
 ```
+
+## Data Model
+
+### Star Schema Design
+
+The data warehouse implements a star schema optimized for analytical queries:
+
+#### Fact Tables
+- `fact_message_analytics`: Core message metrics with foreign keys to dimensions
+- Contains engagement metrics, timestamps, and business indicators
+
+#### Dimension Tables
+- `dim_channels`: Channel information, metadata, and categorization
+- `dim_dates`: Time dimension with business logic and Ethiopian calendar
+- `dim_objects`: Detected objects from YOLO with confidence scores
+
+#### Staging Tables
+- `stg_telegram_channels`: Cleaned and validated channel data
+- `stg_telegram_messages`: Processed message data with quality checks
+- `stg_detected_objects`: Object detection results with metadata
+
+## Usage Guide
 
 ### dbt Project Structure
 
@@ -378,6 +475,61 @@ After completing Tasks 1 and 2:
 - **Task 5**: Orchestrate with Dagster
 - **Task 6**: Containerize with Docker
 
+## Monitoring and Observability
+
+### Dagster UI
+Access the Dagster UI at `http://localhost:3000` to:
+- Monitor pipeline runs and execution status
+- View asset lineage and dependencies
+- Schedule and trigger jobs manually
+- Debug failures with detailed logs
+
+### API Monitoring
+- Health check endpoint: `/health`
+- Metrics endpoint: `/metrics`
+- Interactive API documentation: `/docs`
+- Real-time performance monitoring
+
+## Testing Framework
+
+```bash
+# Execute test suite
+pytest tests/
+
+# Run with coverage reporting
+pytest --cov=api tests/
+
+# Execute dbt data quality tests
+cd dbt_project
+dbt test
+
+# Run integration tests
+pytest tests/integration/
+```
+
+## Deployment Options
+
+### Production Deployment
+
+1. **Environment Configuration**
+   ```bash
+   export ENVIRONMENT=production
+   export DATABASE_URL=postgresql://user:pass@host:port/db
+   export TELEGRAM_API_ID=your_api_id
+   export TELEGRAM_API_HASH=your_api_hash
+   ```
+
+2. **Docker Production Deployment**
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+3. **Kubernetes Deployment**
+   ```bash
+   kubectl apply -f k8s/
+   kubectl get pods -n telegram-analytics
+   ```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -404,13 +556,52 @@ After completing Tasks 1 and 2:
 - Add database indexes on frequently queried columns
 - Monitor query performance and optimize
 
-## Contributing
+## Data Sources
 
-1. Follow the established code structure
-2. Add tests for new models
-3. Update documentation
-4. Use meaningful commit messages
+- **Primary**: Ethiopian medical business Telegram channels
+- **Secondary**: Public health information channels  
+- **Supplementary**: Medical equipment supplier channels
+- **Validation**: Cross-referenced with official medical databases
+
+## Contributing Guidelines
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request with detailed description
+6. Ensure all tests pass and code follows style guidelines
 
 ## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Telegram API Rate Limiting**:
+   - Reduce `--limit` parameter
+   - Increase delays in scraper
+   - Use multiple API accounts
+
+2. **Database Connection Issues**:
+   - Check `.env` configuration
+   - Verify database is running
+   - Test connection with `dbt debug`
+
+3. **dbt Model Failures**:
+   - Check `dbt_project/logs/` for detailed errors
+   - Verify source data exists
+   - Run `dbt test` to identify issues
+
+### Performance Optimization
+
+- Use PostgreSQL for better performance
+- Implement incremental models for large datasets
+- Add database indexes on frequently queried columns
+- Monitor query performance and optimize
+
+## Educational Purpose
 
 This project is for educational purposes as part of the 10 Academy Data Engineering program.
